@@ -15,11 +15,15 @@
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel />
     </Design.DataContext>
-    <DataGrid Margin="20"
-              ItemsSource="{Binding Games}"
-              AutoGenerateColumns="True"
-              IsReadOnly="True"
-              GridLinesVisibility="All"
-              BorderThickness="5"
-              BorderBrush="White" />
+    <StackPanel>
+        <Button Width="160"
+                Command="{Binding OnClickCommand}">Download data</Button>
+        <DataGrid Margin="20"
+                  ItemsSource="{Binding Games}"
+                  AutoGenerateColumns="True"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  BorderThickness="5"
+                  BorderBrush="White" />
+    </StackPanel>
 </Window>
