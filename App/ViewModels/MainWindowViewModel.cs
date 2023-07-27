@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -15,9 +15,10 @@ namespace App.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
-    public ObservableCollection<Game> Games { get; }
+    public ObservableCollection<InputGameData> Games { get; }
 
     private const string GameCoverPath = @"../Output/GameCovers";
+    private static IGDBClient m_api;
 
     public MainWindowViewModel()
     {
@@ -29,30 +30,89 @@ public class MainWindowViewModel : ViewModelBase
         using (var reader = new StreamReader(@"../Input/VGC.csv"))
         using (var csv = new CsvReader(reader, config))
         {
-            var games = csv.GetRecords<Game>();
-            Games = new ObservableCollection<Game>(games);
+            var games = csv.GetRecords<InputGameData>();
+            Games = new ObservableCollection<InputGameData>(games);
         }
     }
 
-    private void asd()
+    public async void OnClickCommand()
     {
-        var igdbData = await Igdb.GetDataFromAPIAsync(url);
+        var outputGameDataList = new List<OutputGameData>();
+
+        foreach (var game in Games)
+        {
+            var igdbData = await GetDataFromAPIAsync(game.Url);
+
+            string developerName = string.Empty;
+            long developerID = 0;
+
+            if (
+                igdbData != null
+                && igdbData.InvolvedCompanies != null
+                && igdbData.InvolvedCompanies.Values != null
+                && igdbData.InvolvedCompanies.Values.FirstOrDefault(o => o.Developer.Value) != null
+            )
+            {
+                var developerData = igdbData.InvolvedCompanies.Values
+                    .FirstOrDefault(o => o.Developer.Value)
+                    .Company.Value;
+
+                developerName = developerData.Name;
+                developerID = developerData.Id.Value;
+            }
+
+            try
+            {
+                var outputGameData = new OutputGameData
+                {
+                    ID = game.ID,
+                    Title = game.Title,
+                    Url = game.Url,
+                    Summary = igdbData.Summary,
+                    Year = igdbData.FirstReleaseDate.HasValue
+                        ? igdbData.FirstReleaseDate.Value.Year
+                        : 0,
+                    DeveloperName = developerName,
+                    GameID = igdbData.Id.Value,
+                    DeveloperID = developerID
+                };
+
+                outputGameDataList.Add(outputGameData);
+            }
+            catch (Exception ex) { }
+        }
+
+        SaveToCSV(outputGameDataList);
     }
 
-    public static async Task<IGDB.Models.Game> GetDataFromAPIAsync(
-        string igdbUrl,
-        bool downloadPoster = true
-    )
+    public void SaveToCSV(List<OutputGameData> games)
     {
-        var api = GetApiClient();
+        var csvConfig = new CsvConfiguration(CultureInfo.CurrentCulture)
+        {
+            HasHeaderRecord = true,
+            Delimiter = ",",
+            Encoding = Encoding.UTF8
+        };
 
-        var games = await api.QueryAsync<IGDB.Models.Game>(
+        using (var writer = new StreamWriter(@"Output\VGC.csv"))
+        using (var csvWriter = new CsvWriter(writer, csvConfig))
+        {
+            csvWriter.WriteHeader<OutputGameData>();
+            csvWriter.WriteRecords(games);
+        }
+    }
+
+    public static async Task<IGDB.Models.Game> GetDataFromAPIAsync(string igdbUrl)
+    {
+        m_api = GetApiClient();
+
+        var games = await m_api.QueryAsync<IGDB.Models.Game>(
             IGDBClient.Endpoints.Games,
-            $"fields name, url, summary, first_release_date, id, involved_companies, cover.image_id; where url = \"{igdbUrl.Trim()}\";"
+            $"fields name, url, summary, first_release_date, id, involved_companies.company.name, involved_companies.developer, cover.image_id, genres, platforms; where url = \"{igdbUrl.Trim()}\";"
         );
         var game = games.FirstOrDefault();
 
-        if (downloadPoster)
+        if (game != null && game.Cover.Value != null)
         {
             var imageId = game.Cover.Value.ImageId;
             var coverUrl = $"https://images.igdb.com/igdb/image/upload/t_cover_big/{imageId}.jpg";
@@ -60,13 +120,17 @@ public class MainWindowViewModel : ViewModelBase
 
             DownloadPNG(coverUrl, destinationFile);
         }
+        else
+        {
+            ///
+        }
 
         return game;
     }
 
     private static IGDBClient GetApiClient()
     {
-        var lines = File.ReadAllLines(@"Keys\igdb_keys.txt");
+        var lines = File.ReadAllLines(@"Keys/igdb_keys.txt");
 
         var clientId = lines[0];
         var clientSecret = lines[1];
@@ -92,15 +156,7 @@ public class MainWindowViewModel : ViewModelBase
 
         using (WebClient client = new WebClient())
         {
-            client.DownloadFile(new Uri(webFile), tempPath);
+            client.DownloadFile(new Uri(webFile), destinationFile);
         }
-
-        using (var bmpTemp = new Bitmap(tempPath))
-        {
-            var imagesTemp = new Bitmap(bmpTemp);
-            imagesTemp.Save(destinationFile, ImageFormat.Png);
-        }
-
-        File.Delete(tempPath);
     }
 }
