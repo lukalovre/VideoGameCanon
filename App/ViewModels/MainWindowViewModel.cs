@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace App.ViewModels;
 
@@ -9,27 +12,16 @@ public class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        var games = new List<Game>
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
-            new Game
-            {
-                ID = 1,
-                Title = "Hals life",
-                Url = "asdas"
-            },
-            new Game
-            {
-                ID = 2,
-                Title = "Bango bungo",
-                Url = "asdas"
-            },
-            new Game
-            {
-                ID = 3,
-                Title = "tersis",
-                Url = "asdas"
-            }
+            HasHeaderRecord = false,
         };
-        Games = new ObservableCollection<Game>(games);
+
+        using (var reader = new StreamReader(@"../Input/VGC.csv"))
+        using (var csv = new CsvReader(reader, config))
+        {
+            var games = csv.GetRecords<Game>();
+            Games = new ObservableCollection<Game>(games);
+        }
     }
 }
