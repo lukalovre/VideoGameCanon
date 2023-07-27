@@ -94,7 +94,7 @@ public class MainWindowViewModel : ViewModelBase
             Encoding = Encoding.UTF8
         };
 
-        using (var writer = new StreamWriter(@"Output\VGC.csv"))
+        using (var writer = new StreamWriter(@"../Output/VGC.csv"))
         using (var csvWriter = new CsvWriter(writer, csvConfig))
         {
             csvWriter.WriteHeader<OutputGameData>();
