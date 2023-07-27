@@ -16,7 +16,7 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
     <DataGrid Margin="20"
-              ItemsSource="{Binding People}"
+              ItemsSource="{Binding Games}"
               AutoGenerateColumns="True"
               IsReadOnly="True"
               GridLinesVisibility="All"

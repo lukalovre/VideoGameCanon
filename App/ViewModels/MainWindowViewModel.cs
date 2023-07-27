@@ -5,16 +5,31 @@ namespace App.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
-    public ObservableCollection<Person> People { get; }
+    public ObservableCollection<Game> Games { get; }
 
     public MainWindowViewModel()
     {
-        var people = new List<Person>
+        var games = new List<Game>
         {
-            new Person("Neil", "Armstrong"),
-            new Person("Buzz", "Lightyear"),
-            new Person("James", "Kirk")
+            new Game
+            {
+                ID = 1,
+                Title = "Hals life",
+                Url = "asdas"
+            },
+            new Game
+            {
+                ID = 2,
+                Title = "Bango bungo",
+                Url = "asdas"
+            },
+            new Game
+            {
+                ID = 3,
+                Title = "tersis",
+                Url = "asdas"
+            }
         };
-        People = new ObservableCollection<Person>(people);
+        Games = new ObservableCollection<Game>(games);
     }
 }
