@@ -8,7 +8,6 @@
         d:DesignHeight="450"
         x:Class="App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
         Title="App">
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
