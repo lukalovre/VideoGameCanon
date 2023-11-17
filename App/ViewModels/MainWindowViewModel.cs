@@ -18,6 +18,9 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<InputGameData> Games { get; }
 
     private const string GameCoverPath = @"../Output/GameCovers";
+    private const string InputPath = @"../Input";
+    private const string InputFileName = "VGC.csv";
+
     private static IGDBClient m_api;
 
     public MainWindowViewModel()
@@ -25,9 +28,21 @@ public class MainWindowViewModel : ViewModelBase
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = false,
-        };
+        }; 
 
-        using (var reader = new StreamReader(@"../Input/VGC.csv"))
+        if (!Directory.Exists(InputPath))
+        {
+			Directory.CreateDirectory(InputPath);
+        }
+
+        var filePath = Path.Combine(InputPath, InputFileName);
+
+		if (!File.Exists(filePath))
+        {
+            return;
+        }
+
+        using (var reader = new StreamReader(filePath))
         using (var csv = new CsvReader(reader, config))
         {
             var games = csv.GetRecords<InputGameData>();
